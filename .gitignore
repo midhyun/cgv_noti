@@ -1,0 +1,4 @@
+.env
+js_files
+node_modules/
+js_files/

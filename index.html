@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>CGV IMAX Notifier</title>
+<style>
+  body {
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: url('background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff; /* White text for better contrast on glass */
+  }
+
+  .glass-container {
+    background: rgba(255, 255, 255, 0.15); /* Semi-transparent white */
+    border-radius: 16px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px); /* Frosted glass effect */
+    -webkit-backdrop-filter: blur(10px); /* For Safari */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Subtle white border */
+    padding: 40px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-sizing: border-box; /* Include padding in width */
+  }
+
+  h1, h2 {
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  }
+
+  p {
+    color: #eee;
+  }
+
+  button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    margin-top: 20px;
+  }
+
+  button:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  #lastResponse {
+    margin-top: 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Request notification permission on page load
+  if (!("Notification" in window)) {
+    console.log("This browser does not support desktop notification");
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(function (permission) {
+      if (permission === "granted") {
+        console.log("Notification permission granted.");
+      }
+    });
+  }
+
+  function showNotification(message) {
+    new Notification("CGV 알림", {
+      body: message,
+      icon: 'https://www.cgv.co.kr/favicon.ico'
+    });
+  }
+
+  const lastResponseElement = document.getElementById('lastResponse');
+
+  async function checkCgvImax() {
+    console.log('Checking for IMAX showtimes...');
+    lastResponseElement.textContent = 'Checking for IMAX showtimes...'; // Update display immediately
+
+    try {
+      // You can change the date here or pass it dynamically
+      const response = await fetch('/check-cgv?scnYmd=20250830'); 
+      const data = await response.json();
+
+      if (data.imaxExists) {
+        const message = 'IMAX관 예매 OPEN !!!';
+        console.log(message);
+        lastResponseElement.textContent = `Last check: ${new Date().toLocaleTimeString()} - ${message}`;
+        if (Notification.permission === "granted") {
+          showNotification(message);
+        } else {
+          console.log('Notification permission not granted. Cannot show notification.');
+        }
+      } else {
+        const message = 'IMAX관 영화 상영 시간 정보 없음';
+        console.log(message);
+        lastResponseElement.textContent = `Last check: ${new Date().toLocaleTimeString()} - ${message}`;
+      }
+    } catch (error) {
+      const errorMessage = `Error checking CGV IMAX: ${error.message}`;
+      console.error(errorMessage);
+      lastResponseElement.textContent = `Last check: ${new Date().toLocaleTimeString()} - ${errorMessage}`;
+    }
+  }
+
+  // Initial check when the page loads
+  checkCgvImax();
+
+  // Set interval to check every 5 minutes (300000 milliseconds)
+  setInterval(checkCgvImax, 300000);
+
+  // Add event listener for the button
+  const checkNowButton = document.getElementById('checkNowButton');
+  if (checkNowButton) {
+    checkNowButton.addEventListener('click', checkCgvImax);
+  }
+});
+</script>
+</head>
+<body>
+  <div class="glass-container">
+    <h1>CGV IMAX Notifier</h1>
+    <p>This page is checking for CGV IMAX showtimes every 5 minutes.</p>
+    <p>Keep this page open to receive notifications.</p>
+
+    <button id="checkNowButton">Check Now</button>
+
+    <h2>Last Request Response:</h2>
+    <p id="lastResponse">Loading...</p>
+  </div>
+</body>
+</html>
