@@ -1,13 +1,24 @@
 const express = require('express');
-const path = require('path');
 const { makeCgvRequest } = require('./cgv_request');
 const { sendMessage } = require('./sendDiscordMessage');
+const cron = require('node-cron');
 
 const app = express();
 const PORT = 3000;
 
 // Serve static files from the current directory
 app.use(express.static(__dirname));
+
+const checkImax = async () => {
+  try {
+    const scnYmd = '20250830';
+    console.log(`[${new Date().toLocaleString()}] Checking for IMAX tickets for ${scnYmd}`);
+    await makeCgvRequest(scnYmd);
+  } catch (error) {
+    console.error('Error during scheduled IMAX check:', error);
+    sendMessage('Error during scheduled IMAX check');
+  }
+};
 
 // API endpoint to check CGV showtimes
 app.get('/check-cgv', async (req, res) => {
@@ -19,5 +30,12 @@ app.get('/check-cgv', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Open http://localhost:${PORT}/index.html in your browser`);
-  sendMessage('실시간 용산아이파크몰 IMAX 예매오픈 감지가 시작되었습니다.')
+
+  // Schedule task to run every 5 minutes.
+  cron.schedule('*/5 * * * *', () => {
+    checkImax();
+  });
+
+  // Initial check on startup
+  checkImax();
 });
