@@ -32,7 +32,7 @@ app.listen(PORT, () => {
   console.log(`Open http://localhost:${PORT}/index.html in your browser`);
 
   // Schedule task to run every 5 minutes.
-  cron.schedule('*/5 * * * *', () => {
+  cron.schedule('*/1 * * * *', () => {
     checkImax();
   });
 
